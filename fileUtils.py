@@ -36,6 +36,21 @@ class DirManager:
         """ 重新计算 """
         self.__buildDirTree()
 
+    def searchNode(self, text: str, ignoreCase: bool) -> list:
+        """ 搜索匹配的节点 """
+        result = []
+        nodes = self.__dirTree.preorderTraversal()
+        if ignoreCase:
+            text = text.lower()
+            for node in nodes:
+                if node.dirName.lower().find(text) >= 0:
+                    result.append(node)
+        else:
+            for node in nodes:
+                if node.dirName.find(text) >= 0:
+                    result.append(node)
+        return result
+
     def __buildDirTree(self):
         """ 建立文件夹信息树 """
         self.__dirTree = DirTreeNode(self.__pathDirName.replace('\\', '/'), self.__pathDirName)

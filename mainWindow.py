@@ -15,6 +15,7 @@ class MainWindow(tk.Tk):
         self.geometry('1600x900')
         self.__initWidget()
         self.__dirManager = None
+        self.__nodeItemDic = {}
 
     def __initWidget(self):
         """ 初始化控件 """
@@ -51,13 +52,17 @@ class MainWindow(tk.Tk):
         for root in roots:
             self.__treeView.delete(root)
 
+    def __clearSelection(self):
+        """ 清空选择 """
+        self.__treeView.selection_remove(self.__treeView.selection())
+
     def __showData(self):
         """ 显示数据 """
         self.__clearData()
-        nodeItemDic = {None: ''}
+        self.__nodeItemDic = {None: ''}
         for curNode in self.__dirManager.dirTree.preorderTraversal():
-            parentItem = nodeItemDic[curNode.parent] if curNode.parent in nodeItemDic else ''
-            nodeItemDic[curNode] = self.__treeView.insert(parentItem, curNode.depth, text=curNode.dirName,
+            parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
+            self.__nodeItemDic[curNode] = self.__treeView.insert(parentItem, curNode.depth, text=curNode.dirName,
                 values=(curNode.allSize, f'{curNode.sizePercent:.3f}%', curNode.data))
 
     def __clickLoadDirButton(self):
@@ -81,4 +86,9 @@ class MainWindow(tk.Tk):
 
     def __clickSearchButton(self):
         """ 点击搜索 """
-        pass
+        text = self.__searchEntry.get()
+        if self.__dirManager and text:
+            self.__clearSelection()
+            nodes = self.__dirManager.searchNode(text, True)
+            for node in nodes:
+                self.__treeView.selection_add(self.__nodeItemDic[node])
