@@ -45,10 +45,19 @@ class MainWindow(tk.Tk):
         """ 初始化数据页面 """
         self.__scrollbar = tk.Scrollbar(self)
         self.__scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
-        self.__treeView = ttk.Treeview(self, yscrollcommand=self.__scrollbar.set, columns=('大小', '百分比'))
+        self.__treeView = ttk.Treeview(self, yscrollcommand=self.__scrollbar.set, columns=(None,)*5)
         self.__treeView.heading('#0', text='路径')
-        self.__treeView.heading('大小', text='大小')
-        self.__treeView.heading('百分比', text='百分比')
+        self.__treeView.heading('#1', text='大小（不包含子文件夹）')
+        self.__treeView.heading('#2', text='大小（包含子文件夹）')
+        self.__treeView.heading('#3', text='百分比（包含子文件夹）')
+        self.__treeView.heading('#4', text='文件夹数')
+        self.__treeView.heading('#5', text='文件数')
+        self.__treeView.column('#0', width=500)
+        self.__treeView.column('#1', anchor=tk.E)
+        self.__treeView.column('#2', anchor=tk.E)
+        self.__treeView.column('#3', anchor=tk.E)
+        self.__treeView.column('#4', anchor=tk.E)
+        self.__treeView.column('#5', anchor=tk.E)
         self.__treeView.pack(expand=1, fill=tk.BOTH)
         self.__scrollbar.config(command=self.__treeView.yview)
 
@@ -69,7 +78,8 @@ class MainWindow(tk.Tk):
         for curNode in self.__dirManager.dirTree.preorderTraversal():
             parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
             self.__nodeItemDic[curNode] = self.__treeView.insert(parentItem, curNode.depth, text=curNode.dirName,
-                values=(curNode.allSize, f'{curNode.sizePercent:.3f}%', curNode.data))
+                values=(curNode.selfSize, curNode.allSize, f'{curNode.sizePercent:.3f}%',
+                        curNode.folderCount, curNode.fileCount, curNode.pathDirName))
 
     def __clickLoadDirButton(self):
         """ 点击加载路径 """
@@ -90,7 +100,7 @@ class MainWindow(tk.Tk):
         if len(_ids) != 1:
             return
         item = self.__treeView.item(_ids[0])
-        os.system('start explorer ' + item['values'][2].replace('/', '\\'))
+        os.system('start explorer ' + item['values'][-1].replace('/', '\\'))
 
     def __clickSearchButton(self):
         """ 点击搜索 """

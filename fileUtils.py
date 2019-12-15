@@ -1,22 +1,51 @@
 import queue
 import os
-from utils import tree
 
 
-class DirTreeNode(tree.MultiTreeNode):
+class DirTreeNode:
     """ 文件夹树节点 """
 
     def __init__(self, pathDirName: str, dirName: str):
         """ 初始化 """
-        super().__init__(pathDirName)
+        self.parent = None
+        self.children = []
+        self.depth = 0
+
+        self.pathDirName = pathDirName
         self.dirName = dirName
-        self.fileCount = 0
         self.selfSize = 0
         self.allSize = 0
         self.sizePercent = 0
         self.folderCount = 0
         self.fileCount = 0
         self.canVisit = True
+
+    def appendChild(self, node):
+        """ 添加子节点 """
+        self.children.append(node)
+        node.parent = self
+        node.depth = self.depth + 1
+
+    def preorderTraversal(self) -> list:
+        """ 前序遍历 """
+        result = []
+        nodeStack = [self]
+        while nodeStack:
+            curNode = nodeStack.pop()
+            result.append(curNode)
+            nodeStack.extend(reversed(curNode.children))
+        return result
+
+    def postorderTraversal(self) -> list:
+        """ 后序遍历 """
+        result = []
+        nodeStack = [self]
+        while nodeStack:
+            curNode = nodeStack.pop()
+            result.append(curNode)
+            nodeStack.extend(curNode.children)
+        result.reverse()
+        return result
 
 
 class DirManager:
@@ -58,8 +87,8 @@ class DirManager:
         while not dirNodeQueue.empty():
             curNode = dirNodeQueue.get()
             try:
-                for dirName in os.listdir(curNode.data):
-                    pathDirName = os.path.join(curNode.data, dirName).replace('\\', '/')
+                for dirName in os.listdir(curNode.pathDirName):
+                    pathDirName = os.path.join(curNode.pathDirName, dirName).replace('\\', '/')
                     if os.path.isdir(pathDirName):
                         newNode = DirTreeNode(pathDirName, dirName)
                         curNode.appendChild(newNode)
@@ -73,7 +102,7 @@ class DirManager:
         nodes = self.__dirTree.postorderTraversal()
         for i in range(len(nodes)):
             node = nodes[i]
-            node.selfSize = max(DirManager.__getDirSizeWithoutSubdirs(node.data), 0)
+            node.selfSize = max(DirManager.__getDirSizeWithoutSubdirs(node.pathDirName), 0)
             node.allSize = node.selfSize + sum([child.allSize for child in node.children])
             if node.allSize:
                 for child in node.children:
