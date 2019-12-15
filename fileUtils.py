@@ -1,6 +1,5 @@
 import queue
 import os
-from utils import pyUtils
 from utils import tree
 
 
@@ -21,7 +20,7 @@ class DirTreeNode(tree.MultiTreeNode):
 
 
 class DirManager:
-    """ 文件夹信息管理器 """
+    """ 文件夹信息管理 """
 
     def __init__(self, pathDirName: str):
         self.__pathDirName = pathDirName
@@ -74,7 +73,7 @@ class DirManager:
         nodes = self.__dirTree.postorderTraversal()
         for i in range(len(nodes)):
             node = nodes[i]
-            node.selfSize = max(pyUtils.getDirSizeWithoutSubdirs(node.data), 0)
+            node.selfSize = max(DirManager.__getDirSizeWithoutSubdirs(node.data), 0)
             node.allSize = node.selfSize + sum([child.allSize for child in node.children])
             if node.allSize:
                 for child in node.children:
@@ -82,3 +81,14 @@ class DirManager:
             node.folderCount += sum([child.folderCount for child in node.children])
             node.fileCount += sum([child.fileCount for child in node.children])
         nodes[-1].sizePercent = 100
+
+    @staticmethod
+    def __getDirSizeWithoutSubdirs(pathDirName: str) -> int:
+        """ 获取文件夹中直属文件的总大小
+        :returns: 返回负数表示获取失败
+        """
+        try:
+            return sum([os.path.getsize(os.path.join(pathDirName, fileName)) for fileName in os.listdir(pathDirName)
+                        if os.path.isfile(os.path.join(pathDirName, fileName))])
+        except:
+            return -1

@@ -12,7 +12,9 @@ class MainWindow(tk.Tk):
         """ 初始化 """
         super().__init__()
         self.title('Folder Size')
-        self.geometry('1600x900')
+        width, height = 1600, 900
+        xOff, yOff = (self.winfo_screenwidth() - width) // 2, (self.winfo_screenheight() - height) // 2
+        self.geometry(f'{width}x{height}+{xOff}+{yOff}')
         self.__initWidget()
         self.__dirManager = None
         self.__nodeItemDic = {}
@@ -35,16 +37,20 @@ class MainWindow(tk.Tk):
         self.__openButton.pack(side=tk.LEFT)
         self.__searchButton = tk.Button(self.__topFrame, text='搜索', command=self.__clickSearchButton)
         self.__searchButton.pack(side=tk.RIGHT)
-        self.__searchEntry = tk.Entry(self.__topFrame)
+        self.__searchEntry = tk.Entry(self.__topFrame, width=30)
         self.__searchEntry.pack(side=tk.RIGHT)
+        self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
 
     def __initDataFrame(self):
         """ 初始化数据页面 """
-        self.__treeView = ttk.Treeview(self, columns=('大小', '百分比'))
+        self.__scrollbar = tk.Scrollbar(self)
+        self.__scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
+        self.__treeView = ttk.Treeview(self, yscrollcommand=self.__scrollbar.set, columns=('大小', '百分比'))
         self.__treeView.heading('#0', text='路径')
         self.__treeView.heading('大小', text='大小')
         self.__treeView.heading('百分比', text='百分比')
         self.__treeView.pack(expand=1, fill=tk.BOTH)
+        self.__scrollbar.config(command=self.__treeView.yview)
 
     def __clearData(self):
         """ 清空数据 """
@@ -80,9 +86,11 @@ class MainWindow(tk.Tk):
 
     def __clickOpenButton(self):
         """ 点击打开 """
-        for _id in self.__treeView.selection():
-            item = self.__treeView.item(_id)
-            os.system('start explorer ' + item['values'][2].replace('/', '\\'))
+        _ids = self.__treeView.selection()
+        if len(_ids) != 1:
+            return
+        item = self.__treeView.item(_ids[0])
+        os.system('start explorer ' + item['values'][2].replace('/', '\\'))
 
     def __clickSearchButton(self):
         """ 点击搜索 """
@@ -91,4 +99,6 @@ class MainWindow(tk.Tk):
             self.__clearSelection()
             nodes = self.__dirManager.searchNode(text, True)
             for node in nodes:
-                self.__treeView.selection_add(self.__nodeItemDic[node])
+                _id = self.__nodeItemDic[node]
+                self.__treeView.selection_add(_id)
+                self.__treeView.see(_id)
