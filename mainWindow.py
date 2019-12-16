@@ -77,9 +77,13 @@ class MainWindow(tk.Tk):
         self.__nodeItemDic = {None: ''}
         for curNode in self.__dirManager.dirTree.preorderTraversal():
             parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
-            self.__nodeItemDic[curNode] = self.__treeView.insert(parentItem, curNode.depth, text=curNode.dirName,
+            self.__nodeItemDic[curNode] = self.__treeView.insert(
+                parentItem, curNode.depth, text=curNode.dirName,
                 values=(curNode.selfSize, curNode.allSize, f'{curNode.sizePercent:.3f}%',
-                        curNode.folderCount, curNode.fileCount, curNode.pathDirName))
+                        curNode.folderCount, curNode.fileCount, curNode.pathDirName),
+                tags='' if curNode.canVisit else 'cannotVisit'
+            )
+        self.__treeView.tag_configure('cannotVisit', background="yellow")
 
     def __clickLoadDirButton(self):
         """ 点击加载路径 """
