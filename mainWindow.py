@@ -41,6 +41,11 @@ class MainWindow(tk.Tk):
         self.__searchEntry.pack(side=tk.RIGHT)
         self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
 
+        self.__refreshButton.configure(state='disabled')
+        self.__openButton.configure(state='disabled')
+        self.__searchButton.configure(state='disabled')
+        self.__searchEntry.configure(state='disabled')
+
     def __initDataFrame(self):
         """ 初始化数据页面 """
         self.__scrollbar = tk.Scrollbar(self)
@@ -91,6 +96,10 @@ class MainWindow(tk.Tk):
         if dirName:
             self.__dirManager = fileUtils.DirManager(dirName)
             self.__showData()
+        self.__refreshButton.configure(state='normal')
+        self.__openButton.configure(state='normal')
+        self.__searchButton.configure(state='normal')
+        self.__searchEntry.configure(state='normal')
 
     def __clickRefreshButton(self):
         """ 点击刷新 """
