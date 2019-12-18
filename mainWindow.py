@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
-import fileUtils
+from fileUtils import ByteUnit, byteUnitCountDic, DirManager
 
 
 class MainWindow(tk.Tk):
@@ -15,8 +15,10 @@ class MainWindow(tk.Tk):
         width, height = 1600, 900
         xOff, yOff = (self.winfo_screenwidth() - width) // 2, (self.winfo_screenheight() - height) // 2
         self.geometry(f'{width}x{height}+{xOff}+{yOff}')
+
         self.__initWidget()
         self.__dirManager = None
+        self.__unit = ByteUnit.byte
         self.__nodeItemDic = {}
 
     def __initWidget(self):
@@ -35,6 +37,10 @@ class MainWindow(tk.Tk):
         self.__refreshButton.pack(side=tk.LEFT)
         self.__openButton = tk.Button(self.__topFrame, text='打开', command=self.__clickOpenButton)
         self.__openButton.pack(side=tk.LEFT)
+        ttk.Separator(self.__topFrame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=3)
+        self.__changeUnitButton = tk.Button(self.__topFrame, width=3, text='B', command=self.__clickChangeUnitButton)
+        self.__changeUnitButton.pack(side=tk.LEFT)
+
         self.__searchButton = tk.Button(self.__topFrame, text='搜索', command=self.__clickSearchButton)
         self.__searchButton.pack(side=tk.RIGHT)
         self.__searchEntry = tk.Entry(self.__topFrame, width=30)
@@ -78,23 +84,36 @@ class MainWindow(tk.Tk):
 
     def __showData(self):
         """ 显示数据 """
+        if not self.__dirManager:
+            return
         self.__clearData()
         self.__nodeItemDic = {None: ''}
-        for curNode in self.__dirManager.dirTree.preorderTraversal():
-            parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
-            self.__nodeItemDic[curNode] = self.__treeView.insert(
-                parentItem, curNode.depth, text=curNode.dirName,
-                values=(curNode.selfSize, curNode.allSize, f'{curNode.sizePercent:.3f}%',
-                        curNode.folderCount, curNode.fileCount, curNode.pathDirName),
-                tags='' if curNode.canVisit else 'cannotVisit'
-            )
+        if self.__unit == ByteUnit.byte:
+            for curNode in self.__dirManager.dirTree.preorderTraversal():
+                parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
+                self.__nodeItemDic[curNode] = self.__treeView.insert(
+                    parentItem, curNode.depth, text=curNode.dirName,
+                    values=(curNode.selfSize, curNode.allSize, f'{curNode.sizePercent:.3f}%',
+                            curNode.folderCount, curNode.fileCount, curNode.pathDirName),
+                    tags='' if curNode.canVisit else 'cannotVisit'
+                )
+        else:
+            unitRate = byteUnitCountDic[self.__unit]
+            for curNode in self.__dirManager.dirTree.preorderTraversal():
+                parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
+                self.__nodeItemDic[curNode] = self.__treeView.insert(
+                    parentItem, curNode.depth, text=curNode.dirName,
+                    values=(f'{curNode.selfSize / unitRate:.3f}', f'{curNode.allSize / unitRate:.3f}',
+                            f'{curNode.sizePercent:.3f}%', curNode.folderCount, curNode.fileCount, curNode.pathDirName),
+                    tags='' if curNode.canVisit else 'cannotVisit'
+                )
         self.__treeView.tag_configure('cannotVisit', background="yellow")
 
     def __clickLoadDirButton(self):
         """ 点击加载路径 """
         dirName = filedialog.askdirectory()
         if dirName:
-            self.__dirManager = fileUtils.DirManager(dirName)
+            self.__dirManager = DirManager(dirName)
             self.__showData()
         self.__refreshButton.configure(state='normal')
         self.__openButton.configure(state='normal')
@@ -114,6 +133,22 @@ class MainWindow(tk.Tk):
             return
         item = self.__treeView.item(_ids[0])
         os.system('start explorer ' + item['values'][-1].replace('/', '\\'))
+
+    def __clickChangeUnitButton(self):
+        """ 点击单位转换 """
+        if self.__unit == ByteUnit.byte:
+            self.__unit = ByteUnit.kiloByte
+            self.__changeUnitButton['text'] = 'KB'
+        elif self.__unit == ByteUnit.kiloByte:
+            self.__unit = ByteUnit.megaByte
+            self.__changeUnitButton['text'] = 'MB'
+        elif self.__unit == ByteUnit.megaByte:
+            self.__unit = ByteUnit.gigaByte
+            self.__changeUnitButton['text'] = 'GB'
+        else:
+            self.__unit = ByteUnit.byte
+            self.__changeUnitButton['text'] = 'B'
+        self.__showData()
 
     def __clickSearchButton(self):
         """ 点击搜索 """

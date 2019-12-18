@@ -1,5 +1,17 @@
+from enum import Enum
 import queue
 import os
+
+
+class ByteUnit(Enum):
+    """ 文件大小单位 """
+    byte = 0
+    kiloByte = 1
+    megaByte = 2
+    gigaByte = 3
+
+
+byteUnitCountDic = {ByteUnit.byte: 1, ByteUnit.kiloByte: 1024, ByteUnit.megaByte: 1024**2, ByteUnit.gigaByte: 1024**3}
 
 
 class DirTreeNode:
