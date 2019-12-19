@@ -16,10 +16,12 @@ class MainWindow(tk.Tk):
         xOff, yOff = (self.winfo_screenwidth() - width) // 2, (self.winfo_screenheight() - height) // 2
         self.geometry(f'{width}x{height}+{xOff}+{yOff}')
 
-        self.__initWidget()
         self.__dirManager = None
         self.__unit = ByteUnit.byte
+        self.__ignoreCase = tk.IntVar()
+        self.__regex = tk.IntVar()
         self.__nodeItemDic = {}
+        self.__initWidget()
 
     def __initWidget(self):
         """ 初始化控件 """
@@ -46,6 +48,11 @@ class MainWindow(tk.Tk):
         self.__searchEntry = tk.Entry(self.__topFrame, width=30)
         self.__searchEntry.pack(side=tk.RIGHT)
         self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
+
+        self.__ignoreCaseButton = tk.Checkbutton(self.__topFrame, text='忽略大小写', variable=self.__ignoreCase)
+        self.__ignoreCaseButton.pack(side=tk.RIGHT)
+        self.__regexButton = tk.Checkbutton(self.__topFrame, text='正则', variable=self.__regex)
+        self.__regexButton.pack(side=tk.RIGHT)
 
         self.__refreshButton.configure(state='disabled')
         self.__openButton.configure(state='disabled')
@@ -155,7 +162,7 @@ class MainWindow(tk.Tk):
         text = self.__searchEntry.get()
         if self.__dirManager and text:
             self.__clearSelection()
-            nodes = self.__dirManager.searchNode(text, True)
+            nodes = self.__dirManager.searchNode(text, self.__ignoreCase.get() == 1, self.__regex.get() == 1)
             for node in nodes:
                 _id = self.__nodeItemDic[node]
                 self.__treeView.selection_add(_id)

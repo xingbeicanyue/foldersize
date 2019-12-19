@@ -1,4 +1,5 @@
 from enum import Enum
+import re
 import queue
 import os
 
@@ -76,19 +77,24 @@ class DirManager:
         """ 重新计算 """
         self.__buildDirTree()
 
-    def searchNode(self, text: str, ignoreCase: bool) -> list:
+    def searchNode(self, text: str, ignoreCase: bool, regex: bool) -> list:
         """ 搜索匹配的节点 """
         result = []
         nodes = self.__dirTree.preorderTraversal()
-        if ignoreCase:
-            text = text.lower()
-            for node in nodes:
-                if node.dirName.lower().find(text) >= 0:
-                    result.append(node)
-        else:
-            for node in nodes:
-                if node.dirName.find(text) >= 0:
-                    result.append(node)
+        try:
+            if regex:
+                if ignoreCase:
+                    result = [node for node in nodes if re.search(text, node.dirName, re.IGNORECASE) is not None]
+                else:
+                    result = [node for node in nodes if re.search(text, node.dirName) is not None]
+            else:
+                if ignoreCase:
+                    text = text.lower()
+                    result = [node for node in nodes if node.dirName.lower().find(text) >= 0]
+                else:
+                    result = [node for node in nodes if node.dirName.find(text) >= 0]
+        except:
+            pass
         return result
 
     def __buildDirTree(self):
