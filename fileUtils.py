@@ -2,6 +2,7 @@ from enum import Enum
 import re
 import queue
 import os
+import pypinyin
 
 
 class ByteUnit(Enum):
@@ -26,6 +27,7 @@ class DirTreeNode:
 
         self.pathDirName = pathDirName
         self.dirName = dirName
+        self.dirNamePinyin = pypinyin.lazy_pinyin(self.dirName.lower(), errors=lambda item: '0'+item)
         self.selfSize = 0
         self.allSize = 0
         self.sizePercent = 0
@@ -64,9 +66,16 @@ class DirTreeNode:
 class DirManager:
     """ 文件夹信息管理 """
 
+    __keyFuncs = {'name': lambda node: node.dirNamePinyin,
+                  'allSize': lambda node: node.allSize,
+                  'selfSize': lambda node: node.selfSize,
+                  'folderCount': lambda node: node.folderCount,
+                  'fileCount': lambda node: node.fileCount}
+
     def __init__(self, pathDirName: str):
         self.__pathDirName = pathDirName
         self.__buildDirTree()
+        self.__sortInOrders = {'name': True, 'allSize': True, 'selfSize': True, 'folderCount': True, 'fileCount': True}
 
     @property
     def dirTree(self):
@@ -96,6 +105,17 @@ class DirManager:
         except:
             pass
         return result
+
+    def sort(self, key: str):
+        """ 排序 """
+        self.__sortInOrders[key] = not self.__sortInOrders[key]
+        keyFunc = DirManager.__keyFuncs[key]
+        inOrder = self.__sortInOrders[key]
+        nodeStack = [self.__dirTree]
+        while nodeStack:
+            curNode = nodeStack.pop()
+            curNode.children.sort(key=keyFunc, reverse=inOrder)
+            nodeStack.extend(curNode.children)
 
     def __buildDirTree(self):
         """ 建立文件夹信息树 """

@@ -64,12 +64,12 @@ class MainWindow(tk.Tk):
         self.__scrollbar = tk.Scrollbar(self)
         self.__scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
         self.__treeView = ttk.Treeview(self, yscrollcommand=self.__scrollbar.set, columns=(None,)*5)
-        self.__treeView.heading('#0', text='路径')
-        self.__treeView.heading('#1', text='大小（不包含子文件夹）')
-        self.__treeView.heading('#2', text='大小（包含子文件夹）')
-        self.__treeView.heading('#3', text='百分比（包含子文件夹）')
-        self.__treeView.heading('#4', text='文件夹数')
-        self.__treeView.heading('#5', text='文件数')
+        self.__treeView.heading('#0', text='路径', command=lambda: self.__sort('name'))
+        self.__treeView.heading('#1', text='大小（不包含子文件夹）', command=lambda: self.__sort('selfSize'))
+        self.__treeView.heading('#2', text='大小（包含子文件夹）', command=lambda: self.__sort('allSize'))
+        self.__treeView.heading('#3', text='百分比（包含子文件夹）', command=lambda: self.__sort('allSize'))
+        self.__treeView.heading('#4', text='文件夹数', command=lambda: self.__sort('folderCount'))
+        self.__treeView.heading('#5', text='文件数', command=lambda: self.__sort('fileCount'))
         self.__treeView.column('#0', width=500)
         self.__treeView.column('#1', anchor=tk.E)
         self.__treeView.column('#2', anchor=tk.E)
@@ -99,7 +99,7 @@ class MainWindow(tk.Tk):
             for curNode in self.__dirManager.dirTree.preorderTraversal():
                 parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
                 self.__nodeItemDic[curNode] = self.__treeView.insert(
-                    parentItem, curNode.depth, text=curNode.dirName,
+                    parentItem, 'end', text=curNode.dirName,
                     values=(curNode.selfSize, curNode.allSize, f'{curNode.sizePercent:.3f}%',
                             curNode.folderCount, curNode.fileCount, curNode.pathDirName),
                     tags='' if curNode.canVisit else 'cannotVisit'
@@ -167,3 +167,9 @@ class MainWindow(tk.Tk):
                 _id = self.__nodeItemDic[node]
                 self.__treeView.selection_add(_id)
                 self.__treeView.see(_id)
+
+    def __sort(self, key: str):
+        """ 排序 """
+        if self.__dirManager:
+            self.__dirManager.sort(key)
+            self.__showData()
