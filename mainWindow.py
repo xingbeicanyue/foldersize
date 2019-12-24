@@ -13,7 +13,7 @@ class MainWindow(tk.Tk):
         super().__init__()
         self.title('Folder Size')
         width, height = 1600, 900
-        xOff, yOff = (self.winfo_screenwidth() - width) // 2, (self.winfo_screenheight() - height) // 2
+        xOff, yOff = (self.winfo_screenwidth() - width) // 2, 50
         self.geometry(f'{width}x{height}+{xOff}+{yOff}')
 
         self.__dirManager = None
@@ -95,26 +95,30 @@ class MainWindow(tk.Tk):
             return
         self.__clearData()
         self.__nodeItemDic = {None: ''}
-        if self.__unit == ByteUnit.byte:
-            for curNode in self.__dirManager.dirTree.preorderTraversal():
-                parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
-                self.__nodeItemDic[curNode] = self.__treeView.insert(
-                    parentItem, 'end', text=curNode.dirName,
-                    values=(curNode.selfSize, curNode.allSize, f'{curNode.sizePercent:.3f}%',
-                            curNode.folderCount, curNode.fileCount, curNode.pathDirName),
-                    tags='' if curNode.canVisit else 'cannotVisit'
-                )
-        else:
-            unitRate = byteUnitCountDic[self.__unit]
-            for curNode in self.__dirManager.dirTree.preorderTraversal():
-                parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
-                self.__nodeItemDic[curNode] = self.__treeView.insert(
-                    parentItem, curNode.depth, text=curNode.dirName,
-                    values=(f'{curNode.selfSize / unitRate:.3f}', f'{curNode.allSize / unitRate:.3f}',
-                            f'{curNode.sizePercent:.3f}%', curNode.folderCount, curNode.fileCount, curNode.pathDirName),
-                    tags='' if curNode.canVisit else 'cannotVisit'
-                )
+        unitRate = byteUnitCountDic[self.__unit]
+        sizeFormat = '0f' if self.__unit == ByteUnit.byte else '3f'
+        dirNodes = self.__dirManager.dirTree.preorderTraversal()
+        for curNode in dirNodes:
+            parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
+            self.__nodeItemDic[curNode] = self.__treeView.insert(
+                parentItem, 'end', text=curNode.dirName, open=not curNode.parent,
+                values=(f'{curNode.selfSize / unitRate: .{sizeFormat}}',
+                        f'{curNode.allSize / unitRate: .{sizeFormat}}',
+                        f'{curNode.sizePercent:.3f}%', curNode.folderCount, curNode.fileCount, curNode.pathDirName),
+                tags='' if curNode.canVisit else 'cannotVisit'
+            )
         self.__treeView.tag_configure('cannotVisit', background="yellow")
+
+    def __getNodeOpenDict(self) -> dict:
+        """ 获取{节点, 展开状态} """
+        return {key: self.__treeView.item(value, option='open') for key, value in self.__nodeItemDic.items()}
+
+    def __setItemOpen(self, nodeOpenDict: dict):
+        """ 设置节点展开状态 """
+        for node, isOpen in nodeOpenDict.items():
+            self.__treeView.item(self.__nodeItemDic[node], open=isOpen)
+
+    # 按钮事件 ---------------------------------------------------------------------------------------------------------
 
     def __clickLoadDirButton(self):
         """ 点击加载路径 """
@@ -155,7 +159,15 @@ class MainWindow(tk.Tk):
         else:
             self.__unit = ByteUnit.byte
             self.__changeUnitButton['text'] = 'B'
-        self.__showData()
+
+        unitRate = byteUnitCountDic[self.__unit]
+        sizeFormat = '0f' if self.__unit == ByteUnit.byte else '3f'
+        for node, item in self.__nodeItemDic.items():
+            if node:
+                self.__treeView.item(item, values=(f'{node.selfSize / unitRate: .{sizeFormat}}',
+                                                   f'{node.allSize / unitRate: .{sizeFormat}}',
+                                                   f'{node.sizePercent:.3f}%',
+                                                   node.folderCount, node.fileCount, node.pathDirName))
 
     def __clickSearchButton(self):
         """ 点击搜索 """
@@ -172,4 +184,6 @@ class MainWindow(tk.Tk):
         """ 排序 """
         if self.__dirManager:
             self.__dirManager.sort(key)
+            nodeOpenDict = self.__getNodeOpenDict()
             self.__showData()
+            self.__setItemOpen(nodeOpenDict)
