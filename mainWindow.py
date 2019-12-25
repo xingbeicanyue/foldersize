@@ -3,18 +3,24 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from fileUtils import ByteUnit, byteUnitCountDic, DirManager
+from toolTip import ToolTip
 
 
 class MainWindow(tk.Tk):
     """ 主界面 """
 
+    __title = 'Folder Size'
+    __initWidth = 1600
+    __initHeight = 900
+    __topOff = 50
+    __toolTipDelay = 0.5
+
     def __init__(self):
         """ 初始化 """
         super().__init__()
-        self.title('Folder Size')
-        width, height = 1600, 900
-        xOff, yOff = (self.winfo_screenwidth() - width) // 2, 50
-        self.geometry(f'{width}x{height}+{xOff}+{yOff}')
+        self.title(MainWindow.__title)
+        xOff, yOff = (self.winfo_screenwidth() - MainWindow.__initWidth) // 2, MainWindow.__topOff
+        self.geometry(f'{MainWindow.__initWidth}x{MainWindow.__initHeight}+{xOff}+{yOff}')
 
         self.__dirManager = None
         self.__unit = ByteUnit.byte
@@ -35,24 +41,31 @@ class MainWindow(tk.Tk):
 
         self.__loadDirButton = tk.Button(self.__topFrame, text='扫描', command=self.__clickLoadDirButton)
         self.__loadDirButton.pack(side=tk.LEFT)
+        ToolTip(self.__loadDirButton, '扫描', delay=MainWindow.__toolTipDelay, follow=False)
         self.__refreshButton = tk.Button(self.__topFrame, text='刷新', command=self.__clickRefreshButton)
         self.__refreshButton.pack(side=tk.LEFT)
+        ToolTip(self.__refreshButton, '刷新', delay=MainWindow.__toolTipDelay, follow=False)
         self.__openButton = tk.Button(self.__topFrame, text='打开', command=self.__clickOpenButton)
         self.__openButton.pack(side=tk.LEFT)
+        ToolTip(self.__openButton, '打开', delay=MainWindow.__toolTipDelay, follow=False)
         ttk.Separator(self.__topFrame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=3)
         self.__changeUnitButton = tk.Button(self.__topFrame, width=3, text='B', command=self.__clickChangeUnitButton)
         self.__changeUnitButton.pack(side=tk.LEFT)
+        ToolTip(self.__changeUnitButton, '切换单位', delay=MainWindow.__toolTipDelay, follow=False)
 
         self.__searchButton = tk.Button(self.__topFrame, text='搜索', command=self.__clickSearchButton)
         self.__searchButton.pack(side=tk.RIGHT)
+        ToolTip(self.__searchButton, '搜索', delay=MainWindow.__toolTipDelay, follow=False)
         self.__searchEntry = tk.Entry(self.__topFrame, width=30)
         self.__searchEntry.pack(side=tk.RIGHT)
         self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
 
         self.__ignoreCaseButton = tk.Checkbutton(self.__topFrame, text='忽略大小写', variable=self.__ignoreCase)
         self.__ignoreCaseButton.pack(side=tk.RIGHT)
+        ToolTip(self.__ignoreCaseButton, '忽略大小写', delay=MainWindow.__toolTipDelay, follow=False)
         self.__regexButton = tk.Checkbutton(self.__topFrame, text='正则', variable=self.__regex)
         self.__regexButton.pack(side=tk.RIGHT)
+        ToolTip(self.__regexButton, '正则表达式', delay=MainWindow.__toolTipDelay, follow=False)
 
         self.__refreshButton.configure(state='disabled')
         self.__openButton.configure(state='disabled')
