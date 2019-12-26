@@ -2,8 +2,8 @@ import os
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
-from fileUtils import ByteUnit, byteUnitCountDic, DirManager
 from toolTip import ToolTip
+from fileUtils import ByteUnit, byteUnitCountDic, DirManager
 
 
 class MainWindow(tk.Tk):
@@ -39,24 +39,26 @@ class MainWindow(tk.Tk):
         self.__topFrame = tk.Frame(self, height=30)
         self.__topFrame.pack(side=tk.TOP, fill=tk.X)
 
-        self.__loadDirButton = tk.Button(self.__topFrame, text='扫描', command=self.__clickLoadDirButton)
+        self.__loadDirButton = tk.Button(self.__topFrame, text='扫描', command=self.__clickLoadDirButton, relief='flat')
         self.__loadDirButton.pack(side=tk.LEFT)
         ToolTip(self.__loadDirButton, '扫描', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__refreshButton = tk.Button(self.__topFrame, text='刷新', command=self.__clickRefreshButton)
+        self.__refreshButton = tk.Button(self.__topFrame, text='刷新', command=self.__clickRefreshButton, relief='flat')
         self.__refreshButton.pack(side=tk.LEFT)
         ToolTip(self.__refreshButton, '刷新', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__openButton = tk.Button(self.__topFrame, text='打开', command=self.__clickOpenButton)
+        self.__openButton = tk.Button(self.__topFrame, text='打开', command=self.__clickOpenButton, relief='flat')
         self.__openButton.pack(side=tk.LEFT)
         ToolTip(self.__openButton, '打开', delay=MainWindow.__toolTipDelay, follow=False)
         ttk.Separator(self.__topFrame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=3)
-        self.__changeUnitButton = tk.Button(self.__topFrame, width=3, text='B', command=self.__clickChangeUnitButton)
+        self.__changeUnitButton = tk.Button(self.__topFrame, width=3, text='B', command=self.__clickChangeUnitButton,
+                                            relief='flat')
         self.__changeUnitButton.pack(side=tk.LEFT)
         ToolTip(self.__changeUnitButton, '切换单位', delay=MainWindow.__toolTipDelay, follow=False)
+        ttk.Separator(self.__topFrame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=3)
 
-        self.__searchButton = tk.Button(self.__topFrame, text='搜索', command=self.__clickSearchButton)
+        self.__searchButton = tk.Button(self.__topFrame, text='搜索', command=self.__clickSearchButton, relief='flat')
         self.__searchButton.pack(side=tk.RIGHT)
         ToolTip(self.__searchButton, '搜索', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__searchEntry = tk.Entry(self.__topFrame, width=30)
+        self.__searchEntry = tk.Entry(self.__topFrame, width=30, justify=tk.RIGHT)
         self.__searchEntry.pack(side=tk.RIGHT)
         self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
 
@@ -104,23 +106,30 @@ class MainWindow(tk.Tk):
 
     def __showData(self):
         """ 显示数据 """
-        if not self.__dirManager:
-            return
         self.__clearData()
         self.__nodeItemDic = {None: ''}
-        unitRate = byteUnitCountDic[self.__unit]
-        sizeFormat = '0f' if self.__unit == ByteUnit.byte else '3f'
-        dirNodes = self.__dirManager.dirTree.preorderTraversal()
-        for curNode in dirNodes:
-            parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
-            self.__nodeItemDic[curNode] = self.__treeView.insert(
-                parentItem, 'end', text=curNode.dirName, open=not curNode.parent,
-                values=(f'{curNode.selfSize / unitRate: .{sizeFormat}}',
-                        f'{curNode.allSize / unitRate: .{sizeFormat}}',
-                        f'{curNode.sizePercent:.3f}%', curNode.folderCount, curNode.fileCount, curNode.pathDirName),
-                tags='' if curNode.canVisit else 'cannotVisit'
-            )
-        self.__treeView.tag_configure('cannotVisit', background="yellow")
+        if self.__dirManager is None or self.__dirManager.dirTree is None:
+            buttonState = 'disabled'
+        else:
+            buttonState = 'normal'
+            unitRate = byteUnitCountDic[self.__unit]
+            sizeFormat = '0f' if self.__unit == ByteUnit.byte else '3f'
+            dirNodes = self.__dirManager.dirTree.preorderTraversal()
+            for curNode in dirNodes:
+                parentItem = self.__nodeItemDic[curNode.parent] if curNode.parent in self.__nodeItemDic else ''
+                self.__nodeItemDic[curNode] = self.__treeView.insert(
+                    parentItem, 'end', text=curNode.dirName, open=not curNode.parent,
+                    values=(f'{curNode.selfSize / unitRate: .{sizeFormat}}',
+                            f'{curNode.allSize / unitRate: .{sizeFormat}}',
+                            f'{curNode.sizePercent:.3f}%', curNode.folderCount, curNode.fileCount, curNode.pathDirName),
+                    tags='' if curNode.canVisit else 'cannotVisit'
+                )
+            self.__treeView.tag_configure('cannotVisit', background="yellow")
+
+        self.__refreshButton.configure(state=buttonState)
+        self.__openButton.configure(state=buttonState)
+        self.__searchButton.configure(state=buttonState)
+        self.__searchEntry.configure(state=buttonState)
 
     def __getNodeOpenDict(self) -> dict:
         """ 获取{节点, 展开状态} """
@@ -139,10 +148,6 @@ class MainWindow(tk.Tk):
         if dirName:
             self.__dirManager = DirManager(dirName)
             self.__showData()
-        self.__refreshButton.configure(state='normal')
-        self.__openButton.configure(state='normal')
-        self.__searchButton.configure(state='normal')
-        self.__searchEntry.configure(state='normal')
 
     def __clickRefreshButton(self):
         """ 点击刷新 """

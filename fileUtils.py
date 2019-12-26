@@ -73,9 +73,9 @@ class DirManager:
                   'fileCount': lambda node: node.fileCount}
 
     def __init__(self, pathDirName: str):
+        self.__sortInOrders = {'name': True, 'allSize': True, 'selfSize': True, 'folderCount': True, 'fileCount': True}
         self.__pathDirName = pathDirName
         self.__buildDirTree()
-        self.__sortInOrders = {'name': True, 'allSize': True, 'selfSize': True, 'folderCount': True, 'fileCount': True}
 
     @property
     def dirTree(self):
@@ -108,6 +108,8 @@ class DirManager:
 
     def sort(self, key: str):
         """ 排序 """
+        if self.__dirTree is None:
+            return
         self.__sortInOrders[key] = not self.__sortInOrders[key]
         keyFunc = DirManager.__keyFuncs[key]
         inOrder = self.__sortInOrders[key]
@@ -119,35 +121,38 @@ class DirManager:
 
     def __buildDirTree(self):
         """ 建立文件夹信息树 """
-        self.__dirTree = DirTreeNode(self.__pathDirName.replace('\\', '/'), self.__pathDirName)
-        dirNodeQueue = queue.Queue()
-        dirNodeQueue.put(self.__dirTree)
-        while not dirNodeQueue.empty():
-            curNode = dirNodeQueue.get()
-            try:
-                for dirName in os.listdir(curNode.pathDirName):
-                    pathDirName = os.path.join(curNode.pathDirName, dirName).replace('\\', '/')
-                    if os.path.isdir(pathDirName):
-                        newNode = DirTreeNode(pathDirName, dirName)
-                        curNode.appendChild(newNode)
-                        dirNodeQueue.put(newNode)
-                        curNode.folderCount += 1
-                    else:
-                        curNode.fileCount += 1
-            except PermissionError:
-                curNode.canVisit = False
+        try:
+            self.__dirTree = DirTreeNode(self.__pathDirName.replace('\\', '/'), self.__pathDirName)
+            dirNodeQueue = queue.Queue()
+            dirNodeQueue.put(self.__dirTree)
+            while not dirNodeQueue.empty():
+                curNode = dirNodeQueue.get()
+                try:
+                    for dirName in os.listdir(curNode.pathDirName):
+                        pathDirName = os.path.join(curNode.pathDirName, dirName).replace('\\', '/')
+                        if os.path.isdir(pathDirName):
+                            newNode = DirTreeNode(pathDirName, dirName)
+                            curNode.appendChild(newNode)
+                            dirNodeQueue.put(newNode)
+                            curNode.folderCount += 1
+                        else:
+                            curNode.fileCount += 1
+                except PermissionError:
+                    curNode.canVisit = False
 
-        nodes = self.__dirTree.postorderTraversal()
-        for i in range(len(nodes)):
-            node = nodes[i]
-            node.selfSize = max(DirManager.__getDirSizeWithoutSubdirs(node.pathDirName), 0)
-            node.allSize = node.selfSize + sum([child.allSize for child in node.children])
-            if node.allSize:
-                for child in node.children:
-                    child.sizePercent = child.allSize / node.allSize * 100
-            node.folderCount += sum([child.folderCount for child in node.children])
-            node.fileCount += sum([child.fileCount for child in node.children])
-        nodes[-1].sizePercent = 100
+            nodes = self.__dirTree.postorderTraversal()
+            for i in range(len(nodes)):
+                node = nodes[i]
+                node.selfSize = max(DirManager.__getDirSizeWithoutSubdirs(node.pathDirName), 0)
+                node.allSize = node.selfSize + sum([child.allSize for child in node.children])
+                if node.allSize:
+                    for child in node.children:
+                        child.sizePercent = child.allSize / node.allSize * 100
+                node.folderCount += sum([child.folderCount for child in node.children])
+                node.fileCount += sum([child.fileCount for child in node.children])
+            nodes[-1].sizePercent = 100
+        except:
+            self.__dirTree = None
 
     @staticmethod
     def __getDirSizeWithoutSubdirs(pathDirName: str) -> int:
