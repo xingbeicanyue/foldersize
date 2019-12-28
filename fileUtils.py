@@ -1,3 +1,7 @@
+"""
+文件、文件夹相关功能
+"""
+
 from enum import Enum
 import re
 import queue

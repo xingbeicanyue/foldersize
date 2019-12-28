@@ -1,3 +1,7 @@
+"""
+主窗口
+"""
+
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -10,7 +14,7 @@ from fileUtils import ByteUnit, byteUnitCountDic, DirManager
 class MainWindow(tk.Tk):
     """ 主界面 """
 
-    __iconAddr = './icons/mainWindow.ico'
+    __iconAddr = './icon/mainWindow.ico'
     __title = 'Folder Size'
     __initWidth = 1600
     __initHeight = 900
@@ -21,7 +25,7 @@ class MainWindow(tk.Tk):
         """ 初始化 """
         super().__init__()
         self.__icons = icon.Icons()
-        self.iconbitmap(MainWindow.__iconAddr)
+        # self.iconbitmap(MainWindow.__iconAddr)
         self.title(MainWindow.__title)
         xOff, yOff = (self.winfo_screenwidth() - MainWindow.__initWidth) // 2, MainWindow.__topOff
         self.geometry(f'{MainWindow.__initWidth}x{MainWindow.__initHeight}+{xOff}+{yOff}')
@@ -223,10 +227,11 @@ class MainWindow(tk.Tk):
         if self.__dirManager and text:
             self.__clearSelection()
             nodes = self.__dirManager.searchNode(text, self.__ignoreCase, self.__regex)
-            for node in nodes:
-                _id = self.__nodeItemDic[node]
-                self.__treeView.selection_add(_id)
-                self.__treeView.see(_id)
+            if nodes:
+                for node in nodes:
+                    _id = self.__nodeItemDic[node]
+                    self.__treeView.selection_add(_id)
+                self.__treeView.see(self.__nodeItemDic[nodes[0]])
 
     def __sort(self, key: str):
         """ 排序 """

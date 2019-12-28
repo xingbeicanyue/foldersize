@@ -1,3 +1,7 @@
+"""
+图标
+"""
+
 import tkinter as tk
 
 

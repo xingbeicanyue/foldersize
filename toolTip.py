@@ -1,3 +1,7 @@
+"""
+气泡提示框
+"""
+
 import tkinter as tk
 import time
 
