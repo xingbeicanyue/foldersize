@@ -31,7 +31,7 @@ class DirTreeNode:
         self.selfSize = 0
         self.allSize = 0
         self.sizePercent = 0
-        self.folderCount = 0
+        self.dirCount = 0
         self.fileCount = 0
         self.canVisit = True
 
@@ -69,11 +69,11 @@ class DirManager:
     __keyFuncs = {'name': lambda node: node.dirNamePinyin,
                   'allSize': lambda node: node.allSize,
                   'selfSize': lambda node: node.selfSize,
-                  'folderCount': lambda node: node.folderCount,
+                  'dirCount': lambda node: node.dirCount,
                   'fileCount': lambda node: node.fileCount}
 
     def __init__(self, pathDirName: str):
-        self.__sortInOrders = {'name': True, 'allSize': True, 'selfSize': True, 'folderCount': True, 'fileCount': True}
+        self.__sortInOrders = {'name': True, 'allSize': True, 'selfSize': True, 'dirCount': True, 'fileCount': True}
         self.__pathDirName = pathDirName
         self.__buildDirTree()
 
@@ -134,7 +134,7 @@ class DirManager:
                             newNode = DirTreeNode(pathDirName, dirName)
                             curNode.appendChild(newNode)
                             dirNodeQueue.put(newNode)
-                            curNode.folderCount += 1
+                            curNode.dirCount += 1
                         else:
                             curNode.fileCount += 1
                 except PermissionError:
@@ -148,7 +148,7 @@ class DirManager:
                 if node.allSize:
                     for child in node.children:
                         child.sizePercent = child.allSize / node.allSize * 100
-                node.folderCount += sum([child.folderCount for child in node.children])
+                node.dirCount += sum([child.dirCount for child in node.children])
                 node.fileCount += sum([child.fileCount for child in node.children])
             nodes[-1].sizePercent = 100
         except:

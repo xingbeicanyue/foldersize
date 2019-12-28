@@ -3,12 +3,14 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from toolTip import ToolTip
+import icon
 from fileUtils import ByteUnit, byteUnitCountDic, DirManager
 
 
 class MainWindow(tk.Tk):
     """ 主界面 """
 
+    __iconAddr = './icons/mainWindow.ico'
     __title = 'Folder Size'
     __initWidth = 1600
     __initHeight = 900
@@ -18,14 +20,16 @@ class MainWindow(tk.Tk):
     def __init__(self):
         """ 初始化 """
         super().__init__()
+        self.__icons = icon.Icons()
+        self.iconbitmap(MainWindow.__iconAddr)
         self.title(MainWindow.__title)
         xOff, yOff = (self.winfo_screenwidth() - MainWindow.__initWidth) // 2, MainWindow.__topOff
         self.geometry(f'{MainWindow.__initWidth}x{MainWindow.__initHeight}+{xOff}+{yOff}')
 
         self.__dirManager = None
         self.__unit = ByteUnit.byte
-        self.__ignoreCase = tk.IntVar()
-        self.__regex = tk.IntVar()
+        self.__ignoreCase = True
+        self.__regex = False
         self.__nodeItemDic = {}
         self.__initWidget()
 
@@ -36,41 +40,54 @@ class MainWindow(tk.Tk):
 
     def __initTopFrame(self):
         """ 初始化顶部工具栏 """
-        self.__topFrame = tk.Frame(self, height=30)
+        self.__topFrame = tk.Frame(self, height=25, bg='white')
         self.__topFrame.pack(side=tk.TOP, fill=tk.X)
 
-        self.__loadDirButton = tk.Button(self.__topFrame, text='扫描', command=self.__clickLoadDirButton, relief='flat')
+        self.__loadDirButton = tk.Button(self.__topFrame, command=self.__clickLoadDirButton, relief='flat',
+                                         image=self.__icons.scanImage, bg='white')
         self.__loadDirButton.pack(side=tk.LEFT)
         ToolTip(self.__loadDirButton, '扫描', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__refreshButton = tk.Button(self.__topFrame, text='刷新', command=self.__clickRefreshButton, relief='flat')
+
+        self.__refreshButton = tk.Button(self.__topFrame, command=self.__clickRefreshButton, relief='flat',
+                                         image=self.__icons.refreshImage, bg='white')
         self.__refreshButton.pack(side=tk.LEFT)
         ToolTip(self.__refreshButton, '刷新', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__openButton = tk.Button(self.__topFrame, text='打开', command=self.__clickOpenButton, relief='flat')
+
+        self.__openButton = tk.Button(self.__topFrame, command=self.__clickOpenButton, relief='flat',
+                                      image=self.__icons.openImage, bg='white')
         self.__openButton.pack(side=tk.LEFT)
         ToolTip(self.__openButton, '打开', delay=MainWindow.__toolTipDelay, follow=False)
+
         ttk.Separator(self.__topFrame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=3)
-        self.__changeUnitButton = tk.Button(self.__topFrame, width=3, text='B', command=self.__clickChangeUnitButton,
-                                            relief='flat')
+        self.__changeUnitButton = tk.Button(self.__topFrame, command=self.__clickChangeUnitButton,
+                                            relief='flat', image=self.__icons.BImage, bg='white')
         self.__changeUnitButton.pack(side=tk.LEFT)
         ToolTip(self.__changeUnitButton, '切换单位', delay=MainWindow.__toolTipDelay, follow=False)
         ttk.Separator(self.__topFrame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=3)
 
-        self.__searchButton = tk.Button(self.__topFrame, text='搜索', command=self.__clickSearchButton, relief='flat')
+        self.__searchButton = tk.Button(self.__topFrame, command=self.__clickSearchButton, relief='flat',
+                                        image=self.__icons.searchImage, bg='white')
         self.__searchButton.pack(side=tk.RIGHT)
         ToolTip(self.__searchButton, '搜索', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__searchEntry = tk.Entry(self.__topFrame, width=30, justify=tk.RIGHT)
-        self.__searchEntry.pack(side=tk.RIGHT)
-        self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
 
-        self.__ignoreCaseButton = tk.Checkbutton(self.__topFrame, text='忽略大小写', variable=self.__ignoreCase)
-        self.__ignoreCaseButton.pack(side=tk.RIGHT)
-        ToolTip(self.__ignoreCaseButton, '忽略大小写', delay=MainWindow.__toolTipDelay, follow=False)
-        self.__regexButton = tk.Checkbutton(self.__topFrame, text='正则', variable=self.__regex)
+        self.__regexButton = tk.Button(self.__topFrame, command=self.__clickReButton, relief='flat',
+                                       image=self.__icons.notReImage, bg='white')
         self.__regexButton.pack(side=tk.RIGHT)
         ToolTip(self.__regexButton, '正则表达式', delay=MainWindow.__toolTipDelay, follow=False)
 
+        self.__ignoreCaseButton = tk.Button(self.__topFrame, command=self.__clickIgnoreCase, relief='flat',
+                                            image=self.__icons.ignoreCaseImage, bg='white')
+        self.__ignoreCaseButton.pack(side=tk.RIGHT)
+        ToolTip(self.__ignoreCaseButton, '忽略大小写', delay=MainWindow.__toolTipDelay, follow=False)
+
+        self.__searchEntry = tk.Entry(self.__topFrame, width=30, justify=tk.RIGHT)
+        self.__searchEntry.pack(side=tk.RIGHT, padx=5)
+        self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
+
         self.__refreshButton.configure(state='disabled')
         self.__openButton.configure(state='disabled')
+        self.__ignoreCaseButton.configure(state='disabled')
+        self.__regexButton.configure(state='disabled')
         self.__searchButton.configure(state='disabled')
         self.__searchEntry.configure(state='disabled')
 
@@ -83,7 +100,7 @@ class MainWindow(tk.Tk):
         self.__treeView.heading('#1', text='大小（不包含子文件夹）', command=lambda: self.__sort('selfSize'))
         self.__treeView.heading('#2', text='大小（包含子文件夹）', command=lambda: self.__sort('allSize'))
         self.__treeView.heading('#3', text='百分比（包含子文件夹）', command=lambda: self.__sort('allSize'))
-        self.__treeView.heading('#4', text='文件夹数', command=lambda: self.__sort('folderCount'))
+        self.__treeView.heading('#4', text='文件夹数', command=lambda: self.__sort('dirCount'))
         self.__treeView.heading('#5', text='文件数', command=lambda: self.__sort('fileCount'))
         self.__treeView.column('#0', width=500)
         self.__treeView.column('#1', anchor=tk.E)
@@ -121,13 +138,15 @@ class MainWindow(tk.Tk):
                     parentItem, 'end', text=curNode.dirName, open=not curNode.parent,
                     values=(f'{curNode.selfSize / unitRate: .{sizeFormat}}',
                             f'{curNode.allSize / unitRate: .{sizeFormat}}',
-                            f'{curNode.sizePercent:.3f}%', curNode.folderCount, curNode.fileCount, curNode.pathDirName),
+                            f'{curNode.sizePercent:.3f}%', curNode.dirCount, curNode.fileCount, curNode.pathDirName),
                     tags='' if curNode.canVisit else 'cannotVisit'
                 )
             self.__treeView.tag_configure('cannotVisit', background="yellow")
 
         self.__refreshButton.configure(state=buttonState)
         self.__openButton.configure(state=buttonState)
+        self.__ignoreCaseButton.configure(state=buttonState)
+        self.__regexButton.configure(state=buttonState)
         self.__searchButton.configure(state=buttonState)
         self.__searchEntry.configure(state=buttonState)
 
@@ -167,16 +186,16 @@ class MainWindow(tk.Tk):
         """ 点击单位转换 """
         if self.__unit == ByteUnit.byte:
             self.__unit = ByteUnit.kiloByte
-            self.__changeUnitButton['text'] = 'KB'
+            self.__changeUnitButton['image'] = self.__icons.KBImage
         elif self.__unit == ByteUnit.kiloByte:
             self.__unit = ByteUnit.megaByte
-            self.__changeUnitButton['text'] = 'MB'
+            self.__changeUnitButton['image'] = self.__icons.MBImage
         elif self.__unit == ByteUnit.megaByte:
             self.__unit = ByteUnit.gigaByte
-            self.__changeUnitButton['text'] = 'GB'
+            self.__changeUnitButton['image'] = self.__icons.GBImage
         else:
             self.__unit = ByteUnit.byte
-            self.__changeUnitButton['text'] = 'B'
+            self.__changeUnitButton['image'] = self.__icons.BImage
 
         unitRate = byteUnitCountDic[self.__unit]
         sizeFormat = '0f' if self.__unit == ByteUnit.byte else '3f'
@@ -185,14 +204,25 @@ class MainWindow(tk.Tk):
                 self.__treeView.item(item, values=(f'{node.selfSize / unitRate: .{sizeFormat}}',
                                                    f'{node.allSize / unitRate: .{sizeFormat}}',
                                                    f'{node.sizePercent:.3f}%',
-                                                   node.folderCount, node.fileCount, node.pathDirName))
+                                                   node.dirCount, node.fileCount, node.pathDirName))
+
+    def __clickIgnoreCase(self):
+        """ 点击忽略大小写 """
+        self.__ignoreCase = not self.__ignoreCase
+        self.__ignoreCaseButton['image'] =\
+            self.__icons.ignoreCaseImage if self.__ignoreCase else self.__icons.notIgnoreCaseImage
+
+    def __clickReButton(self):
+        """ 点击正则表达式 """
+        self.__regex = not self.__regex
+        self.__regexButton['image'] = self.__icons.reImage if self.__regex else self.__icons.notReImage
 
     def __clickSearchButton(self):
         """ 点击搜索 """
         text = self.__searchEntry.get()
         if self.__dirManager and text:
             self.__clearSelection()
-            nodes = self.__dirManager.searchNode(text, self.__ignoreCase.get() == 1, self.__regex.get() == 1)
+            nodes = self.__dirManager.searchNode(text, self.__ignoreCase, self.__regex)
             for node in nodes:
                 _id = self.__nodeItemDic[node]
                 self.__treeView.selection_add(_id)
