@@ -123,6 +123,25 @@ class DirManager:
             curNode.children.sort(key=keyFunc, reverse=inOrder)
             nodeStack.extend(curNode.children)
 
+    def export(self, file):
+        """ 导出文件夹（包括文件）树状图至文件 """
+
+        def writeOneNode(node):
+            """ 记录一个节点 """
+            file.write(f'{indentStr * node.depth}*{node.dirName}\n')
+            # 记录子文件夹
+            for child in node.children:
+                writeOneNode(child)
+            # 记录文件
+            for fileName in os.listdir(node.pathDirName):
+                if os.path.isfile(os.path.join(node.pathDirName, fileName).replace('\\', '/')):
+                    file.write(f'{indentStr * (node.depth + 1)}{fileName}\n')
+
+        if self.__dirTree is None:
+            return
+        indentStr = '    '  # 缩进字符串
+        writeOneNode(self.__dirTree)
+
     def __buildDirTree(self):
         """ 建立文件夹信息树 """
         try:

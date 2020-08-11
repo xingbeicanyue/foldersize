@@ -52,6 +52,11 @@ class MainWindow(tk.Tk):
         self.__loadDirButton.pack(side=tk.LEFT)
         ToolTip(self.__loadDirButton, '扫描', delay=MainWindow.__toolTipDelay, follow=False)
 
+        self.__exportButton = tk.Button(self.__topFrame, command=self.__clickExportButton, relief='flat',
+                                        image=self.__icons.exportImage, bg='white')
+        self.__exportButton.pack(side=tk.LEFT)
+        ToolTip(self.__exportButton, '导出', delay=MainWindow.__toolTipDelay, follow=False)
+
         self.__refreshButton = tk.Button(self.__topFrame, command=self.__clickRefreshButton, relief='flat',
                                          image=self.__icons.refreshImage, bg='white')
         self.__refreshButton.pack(side=tk.LEFT)
@@ -88,6 +93,7 @@ class MainWindow(tk.Tk):
         self.__searchEntry.pack(side=tk.RIGHT, padx=5)
         self.__searchEntry.bind('<Return>', lambda event: self.__clickSearchButton())
 
+        self.__exportButton.configure(state='disabled')
         self.__refreshButton.configure(state='disabled')
         self.__openButton.configure(state='disabled')
         self.__ignoreCaseButton.configure(state='disabled')
@@ -147,6 +153,7 @@ class MainWindow(tk.Tk):
                 )
             self.__treeView.tag_configure('cannotVisit', background="yellow")
 
+        self.__exportButton.configure(state=buttonState)
         self.__refreshButton.configure(state=buttonState)
         self.__openButton.configure(state=buttonState)
         self.__ignoreCaseButton.configure(state=buttonState)
@@ -171,6 +178,13 @@ class MainWindow(tk.Tk):
         if dirName:
             self.__dirManager = DirManager(dirName)
             self.__showData()
+
+    def __clickExportButton(self):
+        """ 点击导出 """
+        fileName = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[('text files', '.txt')])
+        if fileName:
+            with open(fileName, mode='w', encoding='utf-8') as file:
+                self.__dirManager.export(file)
 
     def __clickRefreshButton(self):
         """ 点击刷新 """
